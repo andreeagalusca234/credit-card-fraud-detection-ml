@@ -15,14 +15,15 @@ st.set_page_config(
 # ── Notion-style CSS ──────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
 
     html, body, [class*="css"] {
-        font-family: 'DM Sans', sans-serif;
-        background-color: #FFFFFF;
-        color: #191919;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        background-color: #FBFBFA;
+        color: #37352F;
+        -webkit-font-smoothing: antialiased;
     }
-    .stApp { background: #FFFFFF; }
+    .stApp { background: #FBFBFA; }
     #MainMenu, footer, header { visibility: hidden; }
     .block-container { padding: 0 !important; max-width: 100% !important; }
 
@@ -31,106 +32,109 @@ st.markdown("""
         margin: 0 auto;
         padding: 56px 40px 80px 40px;
     }
-    .page-icon { font-size: 40px; margin-bottom: 8px; }
+    .page-icon { font-size: 38px; margin-bottom: 10px; }
     .page-title {
-        font-family: 'Crimson Pro', Georgia, serif;
-        font-size: 42px; font-weight: 600;
-        color: #191919; line-height: 1.2; margin-bottom: 6px;
+        font-family: 'Inter', sans-serif;
+        font-size: 34px; font-weight: 700;
+        color: #37352F; line-height: 1.15;
+        letter-spacing: -0.02em; margin-bottom: 8px;
     }
     .page-subtitle {
-        font-size: 15px; font-weight: 300;
-        color: #6B6B6B; margin-bottom: 32px;
-        line-height: 1.6; max-width: 640px;
+        font-size: 14px; font-weight: 400;
+        color: #787774; margin-bottom: 32px;
+        line-height: 1.65; max-width: 620px;
     }
     .notion-divider {
-        border: none; border-top: 1px solid #E9E9E7; margin: 28px 0;
+        border: none; border-top: 1px solid #E9E9E7; margin: 24px 0;
     }
     .section-label {
-        font-size: 11px; font-weight: 500;
-        letter-spacing: 0.08em; text-transform: uppercase;
-        color: #9B9B9B; margin-bottom: 14px;
+        font-size: 11px; font-weight: 600;
+        letter-spacing: 0.06em; text-transform: uppercase;
+        color: #9B9A97; margin-bottom: 12px;
     }
     .callout {
-        background: #F7F7F5; border-radius: 4px;
-        padding: 14px 16px; font-size: 14px; color: #444;
-        line-height: 1.65; margin-bottom: 24px;
+        background: #F1F1EF; border-radius: 3px;
+        padding: 12px 14px; font-size: 13.5px; color: #37352F;
+        line-height: 1.6; margin-bottom: 22px;
         display: flex; gap: 10px; align-items: flex-start;
     }
-    .callout-icon { font-size: 17px; margin-top: 1px; flex-shrink: 0; }
+    .callout-icon { font-size: 16px; margin-top: 1px; flex-shrink: 0; }
     .metrics-row {
         display: grid; grid-template-columns: repeat(4, 1fr);
-        gap: 12px; margin-bottom: 20px;
+        gap: 10px; margin-bottom: 18px;
     }
     .metric-card {
-        border: 1px solid #E9E9E7; border-radius: 6px;
-        padding: 16px 18px; background: #FFFFFF;
-        transition: background 0.15s;
+        border: 1px solid #E9E9E7; border-radius: 3px;
+        padding: 14px 16px; background: #FFFFFF;
+        transition: background 0.12s;
     }
     .metric-card:hover { background: #F7F7F5; }
     .metric-label {
-        font-size: 12px; color: #9B9B9B;
-        font-weight: 400; margin-bottom: 6px; letter-spacing: 0.02em;
+        font-size: 11px; font-weight: 500;
+        color: #9B9A97; margin-bottom: 6px;
+        letter-spacing: 0.04em; text-transform: uppercase;
     }
     .metric-value {
-        font-family: 'Crimson Pro', Georgia, serif;
-        font-size: 30px; font-weight: 600;
-        color: #191919; line-height: 1; margin-bottom: 4px;
+        font-size: 28px; font-weight: 600;
+        color: #37352F; line-height: 1;
+        margin-bottom: 5px; letter-spacing: -0.02em;
     }
-    .metric-sub { font-size: 11px; color: #B0B0B0; font-weight: 300; }
-    .metric-green .metric-value  { color: #0D7A5F; }
-    .metric-amber .metric-value  { color: #A35200; }
-    .metric-red   .metric-value  { color: #C0392B; }
-    .metric-blue  .metric-value  { color: #0B5EA8; }
+    .metric-sub { font-size: 11px; color: #B0AEAB; font-weight: 400; }
+    .metric-green .metric-value { color: #0F7B6C; }
+    .metric-amber .metric-value { color: #AD6B00; }
+    .metric-red   .metric-value { color: #C0392B; }
+    .metric-blue  .metric-value { color: #0B5EA8; }
 
     .insight-line {
-        font-size: 13px; color: #6B6B6B; line-height: 1.7;
-        padding: 12px 16px; border-left: 3px solid #E9E9E7;
-        margin-top: 16px; background: #FAFAFA;
-        border-radius: 0 4px 4px 0;
+        font-size: 13px; color: #787774; line-height: 1.7;
+        padding: 10px 14px; border-left: 2px solid #D3D1CB;
+        margin-top: 14px; background: #F7F7F5;
+        border-radius: 0 3px 3px 0;
     }
-    .insight-line b { color: #191919; }
+    .insight-line b { color: #37352F; font-weight: 600; }
 
     .threshold-row {
         display: flex; gap: 10px; align-items: center;
-        font-size: 13px; color: #6B6B6B; margin-bottom: 6px;
+        font-size: 13px; color: #787774; margin-bottom: 6px;
     }
     .threshold-dot {
-        width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+        width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
     }
 
     .badge {
-        display: inline-block; font-size: 12px; font-weight: 500;
-        padding: 3px 10px; border-radius: 3px; letter-spacing: 0.03em;
+        display: inline-block; font-size: 11.5px; font-weight: 500;
+        padding: 2px 8px; border-radius: 3px; letter-spacing: 0.02em;
     }
-    .badge-approve { background: #DFFAEF; color: #0D7A5F; }
-    .badge-review  { background: #FFF3CD; color: #A35200; }
-    .badge-decline { background: #FDECEA; color: #C0392B; }
+    .badge-approve { background: #DDEDEA; color: #0F7B6C; }
+    .badge-review  { background: #FDECC8; color: #AD6B00; }
+    .badge-decline { background: #FFE2DD; color: #C0392B; }
 
     .score-result {
-        border: 1px solid #E9E9E7; border-radius: 6px;
-        padding: 20px 22px; margin-top: 16px; background: #FAFAFA;
+        border: 1px solid #E9E9E7; border-radius: 3px;
+        padding: 18px 20px; margin-top: 14px; background: #F7F7F5;
     }
     .score-number {
-        font-family: 'Crimson Pro', Georgia, serif;
-        font-size: 38px; font-weight: 600; color: #191919; margin-bottom: 4px;
+        font-size: 34px; font-weight: 600;
+        color: #37352F; letter-spacing: -0.02em; margin-bottom: 4px;
     }
-    .score-decision-label { font-size: 13px; color: #6B6B6B; margin-bottom: 12px; }
+    .score-decision-label { font-size: 13px; color: #787774; margin-bottom: 10px; }
     .score-description {
-        font-size: 13px; color: #444; line-height: 1.6;
-        padding-top: 12px; border-top: 1px solid #E9E9E7;
+        font-size: 13px; color: #37352F; line-height: 1.6;
+        padding-top: 10px; border-top: 1px solid #E9E9E7;
     }
 
-    .stSlider > div > div > div > div { background: #191919 !important; }
-    .streamlit-expanderHeader {
-        font-size: 13px !important; font-weight: 500 !important;
-        color: #444 !important; background: #F7F7F5 !important;
-        border-radius: 4px !important;
-    }
+    .stSlider > div > div > div > div { background: #37352F !important; }
     .stNumberInput input {
         border: 1px solid #E9E9E7 !important;
-        border-radius: 4px !important;
-        font-family: 'DM Sans', sans-serif !important;
-        font-size: 14px !important;
+        border-radius: 3px !important;
+        font-family: 'Inter', sans-serif !important;
+        font-size: 13.5px !important;
+        background: #FFFFFF !important;
+        color: #37352F !important;
+    }
+    label[data-testid="stWidgetLabel"] {
+        font-size: 12px !important; font-weight: 500 !important;
+        color: #787774 !important; letter-spacing: 0.02em !important;
     }
 </style>
 """, unsafe_allow_html=True)
