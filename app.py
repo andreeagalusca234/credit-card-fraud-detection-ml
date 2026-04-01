@@ -25,7 +25,7 @@ st.markdown("""
     }
     .stApp { background: #FBFBFA; }
     #MainMenu, footer, header { visibility: hidden; }
-    .block-container { padding: 1.5rem 1rem !important; max-width: 1100px !important; margin: 0 auto !important; }
+    .block-container { padding: 0.75rem 0.5rem !important; max-width: 1100px !important; margin: 0 auto !important; }
 
     .page-wrapper {
         max-width: 900px;
