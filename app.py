@@ -308,7 +308,8 @@ fig3.add_vline(x=approve_threshold, line_dash="dot", line_color="#0D7A5F", line_
 fig3.add_vline(x=decline_threshold, line_dash="dot", line_color="#C0392B", line_width=1.5,
     annotation=dict(text=f"Decline {decline_threshold:.2f}",
                     font_size=11, font_color="#C0392B", yref="paper", y=1.05))
-fig3.update_layout(**LAYOUT, height=260, barmode="overlay",
+LAYOUT3 = {**LAYOUT, "height": 260}
+fig3.update_layout(**LAYOUT3, barmode="overlay",
     xaxis=dict(title="Risk Score", showgrid=False, linecolor="#E9E9E7"),
     yaxis=dict(title="Count", gridcolor="#F0F0EE", linecolor="#E9E9E7"),
     legend=dict(orientation="h", y=1.12, x=0, font=dict(size=11)))
