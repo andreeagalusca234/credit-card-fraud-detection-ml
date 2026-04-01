@@ -30,7 +30,7 @@ st.markdown("""
     .page-wrapper {
         max-width: 900px;
         margin: 0 auto;
-        padding: 56px 40px 80px 40px;
+        padding: 56px 60px 80px 60px;
     }
     .page-icon { font-size: 38px; margin-bottom: 10px; }
     .page-title {
@@ -280,7 +280,7 @@ with chart_col1:
     fig1.update_layout(**LAYOUT,
         title=dict(text="Decisions by Class", font=dict(size=13, color="#191919"), x=0),
         barmode="stack",
-        legend=dict(orientation="h", y=1.15, x=0, font=dict(size=11)),
+        legend=dict(orientation="h", y=-0.2, x=0, font=dict(size=11)),
         xaxis=dict(showgrid=False, linecolor="#E9E9E7"),
         yaxis=dict(gridcolor="#F0F0EE", linecolor="#E9E9E7"))
     st.plotly_chart(fig1, use_container_width=True)
