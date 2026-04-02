@@ -1,4 +1,4 @@
-# 💳 Credit Card Fraud Detection — Machine Learning
+# 💳 Credit Card Fraud Detection - Machine Learning
 
 > 📎 [View 1-page project summary](./report/credit-fraud-detection-summary.pdf)
 
