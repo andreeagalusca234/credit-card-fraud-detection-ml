@@ -4,7 +4,7 @@
 
 ## 📌 Overview
 
-This project builds an end-to-end machine learning pipeline to detect fraudulent credit card transactions in real time. The dataset contains **284,807 transactions** with only **0.17% fraud cases** — a realistic and challenging class imbalance scenario mirroring production systems at companies like Revolut, Monzo, and Visa.
+This project builds an end-to-end machine learning pipeline to detect fraudulent credit card transactions in real time. The dataset contains **284,807 transactions** with only **0.17% fraud cases**, a realistic and challenging class imbalance scenario mirroring production systems at companies like Revolut, Monzo, and Visa.
 
 The output is not just a model — it is a **risk decision engine** that translates fraud probability scores into business actions: Approve, Review, or Decline.
 
