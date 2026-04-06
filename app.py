@@ -253,6 +253,140 @@ st.markdown("""
 
 st.markdown('<hr class="notion-divider">', unsafe_allow_html=True)
 
+# ── Project Summary ───────────────────────────────────────────────────────────
+st.markdown('<div class="section-label">About this Project</div>', unsafe_allow_html=True)
+
+with st.expander("Overview, methodology & results", expanded=False):
+    st.markdown("""
+    <div class="summary-card-full">
+        <h4>Problem & Motivation</h4>
+        <p>
+            Credit card fraud costs the global financial industry over <b>$30 billion annually</b>.
+            Traditional rule-based systems generate excessive false positives, frustrating legitimate customers.
+            This project builds an end-to-end ML pipeline that assigns a continuous risk score to each
+            transaction — mirroring how production systems at companies like Revolut, Monzo, and Visa operate.
+            The dataset contains <b>284,807 transactions</b> with only <b>0.17% fraud cases</b>, a realistic
+            and challenging class imbalance scenario.
+        </p>
+    </div>
+
+    <div class="summary-grid">
+        <div class="summary-card">
+            <h4>Dataset</h4>
+            <p>
+                Source: Kaggle / ULB Machine Learning Group.<br><br>
+                Features <b>V1–V28</b> are PCA-transformed (anonymised for confidentiality).
+                <b>Amount</b> is the transaction value in EUR; <b>Time</b> is seconds elapsed
+                since the first transaction. No missing values. 492 fraud cases across two days.
+            </p>
+        </div>
+        <div class="summary-card">
+            <h4>Class Imbalance — SMOTE</h4>
+            <p>
+                Standard accuracy is misleading when 99.83% of transactions are legitimate.
+                <b>SMOTE</b> (Synthetic Minority Over-sampling Technique) generates synthetic fraud
+                samples during training only — applied carefully to prevent data leakage into
+                the validation set.
+            </p>
+        </div>
+        <div class="summary-card">
+            <h4>Feature Engineering</h4>
+            <p>
+                Three engineered features boosted signal beyond the raw PCA components:
+                <b>Amount_log</b> (log-transform to reduce skew), <b>Hour</b> (extracted from
+                Time for within-day patterns), and <b>Is_night</b> (binary flag for the
+                22:00–06:00 window, which correlates strongly with fraud).
+            </p>
+        </div>
+        <div class="summary-card">
+            <h4>Evaluation Strategy</h4>
+            <p>
+                ROC-AUC alone is insufficient on imbalanced data. Primary metrics:
+                <b>PR-AUC</b> (Precision-Recall AUC), <b>Recall on fraud class</b>
+                (how much fraud did we catch?), and <b>Precision on fraud class</b>
+                (false alarm rate for operations teams).
+            </p>
+        </div>
+    </div>
+
+    <div class="summary-card-full">
+        <h4>Model Comparison</h4>
+        <table class="results-table">
+            <thead>
+                <tr>
+                    <th>Model</th>
+                    <th>ROC-AUC</th>
+                    <th>PR-AUC</th>
+                    <th>Recall (Fraud)</th>
+                    <th>F1</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Logistic Regression</td>
+                    <td>~0.97</td><td>~0.73</td><td>~0.81</td><td>~0.77</td>
+                </tr>
+                <tr>
+                    <td>Random Forest</td>
+                    <td>~0.98</td><td>~0.84</td><td>~0.83</td><td>~0.86</td>
+                </tr>
+                <tr class="winner">
+                    <td>✦ XGBoost (selected)</td>
+                    <td>~0.98</td><td>~0.87</td><td>~0.86</td><td>~0.88</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="summary-card-full">
+        <h4>Estimated Business Impact</h4>
+        <p>
+            Applied to a hypothetical platform processing <b>1 million transactions/day</b> at £50 average value:
+            ~1,700 fraudulent transactions occur daily. XGBoost catches ~1,460 of them (<b>86% recall</b>),
+            protecting an estimated <b>~£73,000/day</b> in fraud value. Precision above 90% keeps
+            unnecessary customer friction low.
+        </p>
+    </div>
+
+    <div class="summary-card-full">
+        <h4>Key Learnings</h4>
+        <div class="learning-row">
+            <div class="learning-dot"></div>
+            <span><b>Class imbalance is the core challenge.</b> SMOTE and PR-AUC are essential, not optional — standard accuracy is a misleading metric on this data.</span>
+        </div>
+        <div class="learning-row">
+            <div class="learning-dot"></div>
+            <span><b>Threshold tuning is a business decision.</b> The right cutoff depends on operational capacity and risk appetite — which is exactly what this dashboard lets you explore interactively.</span>
+        </div>
+        <div class="learning-row">
+            <div class="learning-dot"></div>
+            <span><b>Feature engineering amplified signal.</b> Time-of-day and log-amount meaningfully improved recall across all three models, even alongside 28 PCA components.</span>
+        </div>
+        <div class="learning-row">
+            <div class="learning-dot"></div>
+            <span><b>XGBoost dominates on tabular fraud data</b> due to its regularisation and handling of feature interactions. It outperformed both the baseline and Random Forest on every metric.</span>
+        </div>
+    </div>
+
+    <div class="summary-card-full" style="margin-bottom:0;">
+        <h4>Tech Stack</h4>
+        <div class="pill-row">
+            <span class="pill">Python 3.10</span>
+            <span class="pill">XGBoost</span>
+            <span class="pill">scikit-learn</span>
+            <span class="pill">imbalanced-learn / SMOTE</span>
+            <span class="pill">pandas</span>
+            <span class="pill">numpy</span>
+            <span class="pill">Streamlit</span>
+            <span class="pill">Plotly</span>
+            <span class="pill">matplotlib</span>
+            <span class="pill">seaborn</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.markdown('<hr class="notion-divider">', unsafe_allow_html=True)
+
 # ── Thresholds ────────────────────────────────────────────────────────────────
 st.markdown('<div class="section-label">Risk Thresholds</div>', unsafe_allow_html=True)
 
@@ -463,140 +597,6 @@ st.markdown(f"""
     </div>
     <div class="score-description">{d_desc[decision]}</div>
 </div>""", unsafe_allow_html=True)
-
-st.markdown('<hr class="notion-divider">', unsafe_allow_html=True)
-
-# ── Project Summary ───────────────────────────────────────────────────────────
-st.markdown('<div class="section-label">About this Project</div>', unsafe_allow_html=True)
-
-with st.expander("Overview, methodology & results", expanded=False):
-    st.markdown("""
-    <div class="summary-card-full">
-        <h4>Problem & Motivation</h4>
-        <p>
-            Credit card fraud costs the global financial industry over <b>$30 billion annually</b>.
-            Traditional rule-based systems generate excessive false positives, frustrating legitimate customers.
-            This project builds an end-to-end ML pipeline that assigns a continuous risk score to each
-            transaction — mirroring how production systems at companies like Revolut, Monzo, and Visa operate.
-            The dataset contains <b>284,807 transactions</b> with only <b>0.17% fraud cases</b>, a realistic
-            and challenging class imbalance scenario.
-        </p>
-    </div>
-
-    <div class="summary-grid">
-        <div class="summary-card">
-            <h4>Dataset</h4>
-            <p>
-                Source: Kaggle / ULB Machine Learning Group.<br><br>
-                Features <b>V1–V28</b> are PCA-transformed (anonymised for confidentiality).
-                <b>Amount</b> is the transaction value in EUR; <b>Time</b> is seconds elapsed
-                since the first transaction. No missing values. 492 fraud cases across two days.
-            </p>
-        </div>
-        <div class="summary-card">
-            <h4>Class Imbalance — SMOTE</h4>
-            <p>
-                Standard accuracy is misleading when 99.83% of transactions are legitimate.
-                <b>SMOTE</b> (Synthetic Minority Over-sampling Technique) generates synthetic fraud
-                samples during training only — applied carefully to prevent data leakage into
-                the validation set.
-            </p>
-        </div>
-        <div class="summary-card">
-            <h4>Feature Engineering</h4>
-            <p>
-                Three engineered features boosted signal beyond the raw PCA components:
-                <b>Amount_log</b> (log-transform to reduce skew), <b>Hour</b> (extracted from
-                Time for within-day patterns), and <b>Is_night</b> (binary flag for the
-                22:00–06:00 window, which correlates strongly with fraud).
-            </p>
-        </div>
-        <div class="summary-card">
-            <h4>Evaluation Strategy</h4>
-            <p>
-                ROC-AUC alone is insufficient on imbalanced data. Primary metrics:
-                <b>PR-AUC</b> (Precision-Recall AUC), <b>Recall on fraud class</b>
-                (how much fraud did we catch?), and <b>Precision on fraud class</b>
-                (false alarm rate for operations teams).
-            </p>
-        </div>
-    </div>
-
-    <div class="summary-card-full">
-        <h4>Model Comparison</h4>
-        <table class="results-table">
-            <thead>
-                <tr>
-                    <th>Model</th>
-                    <th>ROC-AUC</th>
-                    <th>PR-AUC</th>
-                    <th>Recall (Fraud)</th>
-                    <th>F1</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Logistic Regression</td>
-                    <td>~0.97</td><td>~0.73</td><td>~0.81</td><td>~0.77</td>
-                </tr>
-                <tr>
-                    <td>Random Forest</td>
-                    <td>~0.98</td><td>~0.84</td><td>~0.83</td><td>~0.86</td>
-                </tr>
-                <tr class="winner">
-                    <td>✦ XGBoost (selected)</td>
-                    <td>~0.98</td><td>~0.87</td><td>~0.86</td><td>~0.88</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <div class="summary-card-full">
-        <h4>Estimated Business Impact</h4>
-        <p>
-            Applied to a hypothetical platform processing <b>1 million transactions/day</b> at £50 average value:
-            ~1,700 fraudulent transactions occur daily. XGBoost catches ~1,460 of them (<b>86% recall</b>),
-            protecting an estimated <b>~£73,000/day</b> in fraud value. Precision above 90% keeps
-            unnecessary customer friction low.
-        </p>
-    </div>
-
-    <div class="summary-card-full">
-        <h4>Key Learnings</h4>
-        <div class="learning-row">
-            <div class="learning-dot"></div>
-            <span><b>Class imbalance is the core challenge.</b> SMOTE and PR-AUC are essential, not optional — standard accuracy is a misleading metric on this data.</span>
-        </div>
-        <div class="learning-row">
-            <div class="learning-dot"></div>
-            <span><b>Threshold tuning is a business decision.</b> The right cutoff depends on operational capacity and risk appetite — which is exactly what this dashboard lets you explore interactively.</span>
-        </div>
-        <div class="learning-row">
-            <div class="learning-dot"></div>
-            <span><b>Feature engineering amplified signal.</b> Time-of-day and log-amount meaningfully improved recall across all three models, even alongside 28 PCA components.</span>
-        </div>
-        <div class="learning-row">
-            <div class="learning-dot"></div>
-            <span><b>XGBoost dominates on tabular fraud data</b> due to its regularisation and handling of feature interactions. It outperformed both the baseline and Random Forest on every metric.</span>
-        </div>
-    </div>
-
-    <div class="summary-card-full" style="margin-bottom:0;">
-        <h4>Tech Stack</h4>
-        <div class="pill-row">
-            <span class="pill">Python 3.10</span>
-            <span class="pill">XGBoost</span>
-            <span class="pill">scikit-learn</span>
-            <span class="pill">imbalanced-learn / SMOTE</span>
-            <span class="pill">pandas</span>
-            <span class="pill">numpy</span>
-            <span class="pill">Streamlit</span>
-            <span class="pill">Plotly</span>
-            <span class="pill">matplotlib</span>
-            <span class="pill">seaborn</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
 
 st.markdown('<hr class="notion-divider">', unsafe_allow_html=True)
 
