@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Payment Risk Scoring</title>
+<meta name="description" content="Interactive fraud risk scoring dashboard built on XGBoost. By Andreea Galusca.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💳</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #FBFBFA; color: #37352F; -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  .page { max-width: 900px; margin: 0 auto; padding: 56px 24px 80px; }
+  .github-btn {
+    position: fixed; top: 16px; right: 24px; z-index: 10;
+    background: #37352F; color: #fff; font-size: 12px; font-weight: 500;
+    padding: 7px 14px; border-radius: 3px; text-decoration: none;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .github-btn:hover { background: #555450; }
+  .page-icon { font-size: 38px; margin-bottom: 10px; }
+  .page-title { font-size: 34px; font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; margin-bottom: 8px; }
+  .page-subtitle { font-size: 14px; color: #787774; margin-bottom: 32px; line-height: 1.65; max-width: 620px; }
+  hr { border: none; border-top: 1px solid #E9E9E7; margin: 24px 0; }
+  .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #9B9A97; margin-bottom: 12px; }
+
+  details { border: 1px solid #E9E9E7; border-radius: 3px; background: #fff; }
+  summary { cursor: pointer; padding: 12px 16px; font-size: 14px; font-weight: 500; }
+  .details-body { padding: 0 16px 16px; }
+  .card { border: 1px solid #E9E9E7; border-radius: 3px; padding: 16px 18px; background: #fff; margin-bottom: 10px; }
+  .card h4 { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #9B9A97; margin: 0 0 10px; }
+  .card p { font-size: 13px; color: #787774; line-height: 1.7; margin: 0; }
+  .card p b { color: #37352F; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .grid2 .card { margin-bottom: 0; }
+  table.results { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.results th { font-size: 11px; font-weight: 600; color: #9B9A97; letter-spacing: 0.05em; text-transform: uppercase; padding: 5px 10px; text-align: left; border-bottom: 1px solid #E9E9E7; }
+  table.results td { padding: 7px 10px; border-bottom: 1px solid #F1F1EF; }
+  table.results tr:last-child td { border-bottom: none; }
+  table.results .winner td { font-weight: 600; color: #0F7B6C; }
+  .pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill { font-size: 11.5px; font-weight: 500; padding: 3px 10px; border-radius: 20px; background: #F1F1EF; }
+  .learning { font-size: 13px; color: #787774; line-height: 1.65; padding: 7px 0; border-bottom: 1px solid #F1F1EF; }
+  .learning:last-child { border-bottom: none; padding-bottom: 0; }
+  .learning b { color: #37352F; }
+
+  .controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: start; }
+  label.ctl { display: block; font-size: 12px; font-weight: 500; color: #787774; margin-bottom: 8px; }
+  .ctl-val { float: right; color: #37352F; font-weight: 600; }
+  input[type=range] { width: 100%; accent-color: #37352F; }
+  input[type=number] { width: 100%; padding: 8px 10px; border: 1px solid #E9E9E7; border-radius: 3px; font: inherit; font-size: 13.5px; background: #fff; color: #37352F; }
+  .thr-row { display: flex; gap: 10px; align-items: center; font-size: 13px; color: #787774; margin-bottom: 6px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .warning { display: none; margin-top: 12px; padding: 10px 14px; background: #FDECC8; color: #AD6B00; border-radius: 3px; font-size: 13px; }
+
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+  .metric { border: 1px solid #E9E9E7; border-radius: 3px; padding: 14px 16px; background: #fff; }
+  .metric-label { font-size: 11px; font-weight: 500; color: #9B9A97; margin-bottom: 6px; letter-spacing: 0.04em; text-transform: uppercase; }
+  .metric-value { font-size: 28px; font-weight: 600; line-height: 1; margin-bottom: 5px; letter-spacing: -0.02em; }
+  .metric-sub { font-size: 11px; color: #B0AEAB; }
+  .green { color: #0F7B6C; } .blue { color: #0B5EA8; } .amber { color: #AD6B00; } .red { color: #C0392B; }
+  .insight { font-size: 13px; color: #787774; line-height: 1.7; padding: 10px 14px; border-left: 2px solid #D3D1CB; background: #F7F7F5; border-radius: 0 3px 3px 0; }
+  .insight b { color: #37352F; font-weight: 600; }
+
+  .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .chart { background: #fff; border: 1px solid #E9E9E7; border-radius: 3px; min-height: 300px; }
+
+  .callout { background: #F1F1EF; border-radius: 3px; padding: 12px 14px; font-size: 13.5px; line-height: 1.6; margin-bottom: 22px; display: flex; gap: 10px; }
+  .score-result { border: 1px solid #E9E9E7; border-radius: 3px; padding: 18px 20px; margin-top: 14px; background: #F7F7F5; }
+  .score-number { font-size: 34px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 4px; }
+  .score-label { font-size: 13px; color: #787774; margin-bottom: 10px; }
+  .score-desc { font-size: 13px; line-height: 1.6; padding-top: 10px; border-top: 1px solid #E9E9E7; }
+  .badge { display: inline-block; font-size: 11.5px; font-weight: 500; padding: 2px 8px; border-radius: 3px; }
+  .badge-Approve { background: #DDEDEA; color: #0F7B6C; }
+  .badge-Review  { background: #FDECC8; color: #AD6B00; }
+  .badge-Decline { background: #FFE2DD; color: #C0392B; }
+  footer { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 12px; color: #B0B0B0; }
+  footer a { color: #B0B0B0; text-decoration: none; }
+  .loading { font-size: 13px; color: #9B9A97; }
+
+  @media (max-width: 720px) {
+    .page { padding: 64px 16px 60px; }
+    .page-title { font-size: 28px; }
+    .grid2, .charts, .controls { grid-template-columns: 1fr; }
+    .metrics { grid-template-columns: 1fr 1fr; }
+    .github-btn { top: 12px; right: 12px; }
+  }
+</style>
+</head>
+<body>
+<a class="github-btn" href="https://github.com/andreeagalusca234/credit-card-fraud-detection-ml" target="_blank" rel="noopener">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="white" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+  GitHub ↗
+</a>
+
+<main class="page">
+  <div class="page-icon">💳</div>
+  <div class="page-title">Payment Risk Scoring</div>
+  <div class="page-subtitle">
+    An interactive fraud detection engine built on XGBoost, trained on 284,807 real credit card
+    transactions. Adjust the thresholds below to explore the tradeoff between fraud capture
+    and customer friction.
+  </div>
+
+  <hr>
+
+  <div class="section-label">About this Project</div>
+  <details>
+    <summary>Overview, methodology &amp; results</summary>
+    <div class="details-body">
+      <div class="card">
+        <h4>Problem &amp; Motivation</h4>
+        <p>Credit card fraud costs the global financial industry over <b>$30 billion annually</b>.
+        Traditional rule-based systems generate excessive false positives, frustrating legitimate customers.
+        This project builds an end-to-end ML pipeline that assigns a continuous risk score to each
+        transaction, mirroring how production systems at companies like Revolut, Monzo and Visa operate.
+        The dataset contains <b>284,807 transactions</b> with only <b>0.17% fraud cases</b>, a realistic
+        and challenging class imbalance scenario.</p>
+      </div>
+      <div class="grid2">
+        <div class="card"><h4>Dataset</h4><p>Source: Kaggle / ULB Machine Learning Group.<br><br>
+          Features <b>V1–V28</b> are PCA-transformed (anonymised for confidentiality).
+          <b>Amount</b> is the transaction value in EUR; <b>Time</b> is seconds elapsed
+          since the first transaction. No missing values. 492 fraud cases across two days.</p></div>
+        <div class="card"><h4>Class Imbalance: SMOTE</h4><p>Standard accuracy is misleading when 99.83% of transactions are legitimate.
+          <b>SMOTE</b> (Synthetic Minority Over-sampling Technique) generates synthetic fraud
+          samples during training only, applied carefully to prevent data leakage into the validation set.</p></div>
+        <div class="card"><h4>Feature Engineering</h4><p>Three engineered features boosted signal beyond the raw PCA components:
+          <b>Amount_log</b> (log-transform to reduce skew), <b>Hour</b> (extracted from Time for within-day patterns),
+          and <b>Is_night</b> (binary flag for the 22:00–06:00 window, which correlates strongly with fraud).</p></div>
+        <div class="card"><h4>Evaluation Strategy</h4><p>ROC-AUC alone is insufficient on imbalanced data. Primary metrics:
+          <b>PR-AUC</b> (Precision-Recall AUC), <b>Recall on fraud class</b> (how much fraud did we catch?),
+          and <b>Precision on fraud class</b> (false alarm rate for operations teams).</p></div>
+      </div>
+      <div class="card">
+        <h4>Model Comparison</h4>
+        <table class="results">
+          <thead><tr><th>Model</th><th>ROC-AUC</th><th>PR-AUC</th><th>Recall (Fraud)</th><th>Precision (Fraud)</th><th>F1</th></tr></thead>
+          <tbody>
+            <tr><td>Logistic Regression</td><td>0.972</td><td>0.720</td><td>0.908</td><td>0.056</td><td>0.106</td></tr>
+            <tr><td>Random Forest</td><td>0.986</td><td>0.818</td><td>0.888</td><td>0.407</td><td>0.558</td></tr>
+            <tr class="winner"><td>✦ XGBoost (selected)</td><td>0.982</td><td>0.842</td><td>0.867</td><td>0.419</td><td>0.565</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h4>Estimated Business Impact</h4>
+        <p>Applied to a hypothetical platform processing <b>1 million transactions/day</b> at £50 average value:
+        ~1,700 fraudulent transactions occur daily. XGBoost catches ~1,470 of them (<b>87% recall</b>),
+        protecting an estimated <b>~£73,000/day</b> in fraud value. At the default cutoff about 42% of
+        flagged transactions are fraud, so the threshold controls below show how to trade a little recall
+        for far fewer false alarms.</p>
+      </div>
+      <div class="card">
+        <h4>Key Learnings</h4>
+        <div class="learning"><b>Class imbalance is the core challenge.</b> SMOTE and PR-AUC are essential: standard accuracy is a misleading metric on this data.</div>
+        <div class="learning"><b>Threshold tuning is a business decision.</b> The right cutoff depends on operational capacity and risk appetite, which is exactly what this dashboard lets you explore.</div>
+        <div class="learning"><b>Feature engineering amplified signal.</b> Time-of-day and log-amount meaningfully improved recall across all three models, even alongside 28 PCA components.</div>
+        <div class="learning"><b>XGBoost gave the best balance on this data.</b> It had the highest PR-AUC and F1 of the three models, the metrics that matter most on imbalanced fraud data, while Random Forest edged it slightly on ROC-AUC.</div>
+      </div>
+      <div class="card" style="margin-bottom:0">
+        <h4>Tech Stack</h4>
+        <div class="pills">
+          <span class="pill">Python 3.10</span><span class="pill">XGBoost</span><span class="pill">scikit-learn</span>
+          <span class="pill">imbalanced-learn / SMOTE</span><span class="pill">pandas</span><span class="pill">numpy</span>
+          <span class="pill">Plotly</span><span class="pill">matplotlib</span><span class="pill">seaborn</span><span class="pill">Vercel</span>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <hr>
+
+  <div class="section-label">Risk Thresholds</div>
+  <div class="controls">
+    <div>
+      <label class="ctl" for="approve">Approve / Review boundary <span class="ctl-val" id="approveVal">0.20</span></label>
+      <input type="range" id="approve" min="0" max="1" step="0.001" value="0.20">
+    </div>
+    <div>
+      <label class="ctl" for="decline">Review / Decline boundary <span class="ctl-val" id="declineVal">0.60</span></label>
+      <input type="range" id="decline" min="0" max="1" step="0.001" value="0.60">
+    </div>
+    <div style="padding-top:22px">
+      <div class="thr-row"><div class="dot" style="background:#0D7A5F"></div><span>Score &lt; <span class="aT">0.20</span> → <b>Approve</b></span></div>
+      <div class="thr-row"><div class="dot" style="background:#A35200"></div><span><span class="aT">0.20</span> – <span class="dT">0.60</span> → <b>Review</b></span></div>
+      <div class="thr-row"><div class="dot" style="background:#C0392B"></div><span>Score ≥ <span class="dT">0.60</span> → <b>Decline</b></span></div>
+    </div>
+  </div>
+  <div class="warning" id="warn">Approve threshold must be lower than Decline threshold.</div>
+
+  <hr>
+
+  <div id="results">
+    <div class="section-label">Live Performance</div>
+    <div class="metrics">
+      <div class="metric"><div class="metric-label">Fraud Recall</div><div class="metric-value green" id="mRecall">–</div><div class="metric-sub" id="mRecallSub">&nbsp;</div></div>
+      <div class="metric"><div class="metric-label">Precision</div><div class="metric-value blue" id="mPrec">–</div><div class="metric-sub">of declines are true fraud</div></div>
+      <div class="metric"><div class="metric-label">Sent to Review</div><div class="metric-value amber" id="mReview">–</div><div class="metric-sub" id="mReviewSub">&nbsp;</div></div>
+      <div class="metric"><div class="metric-label">False Positives</div><div class="metric-value red" id="mFP">–</div><div class="metric-sub">legitimate txns declined</div></div>
+    </div>
+    <div class="insight" id="insight"><span class="loading">Loading 56,962 scored test transactions…</span></div>
+
+    <hr>
+
+    <div class="section-label">Decision Analysis</div>
+    <div class="charts">
+      <div class="chart" id="chartBars"></div>
+      <div class="chart" id="chartCM"></div>
+    </div>
+    <div class="section-label" style="margin-top:18px">Score Distribution</div>
+    <div class="chart" id="chartHist" style="min-height:260px"></div>
+  </div>
+
+  <hr>
+
+  <div class="section-label">Score a Transaction</div>
+  <div class="callout"><span>🔍</span><div>Enter transaction details to simulate a real-time risk score based on
+    amount and time-of-day signals, the features the model weighs most heavily alongside the anonymised PCA components.</div></div>
+  <div class="controls">
+    <div>
+      <label class="ctl" for="amount">Amount (£)</label>
+      <input type="number" id="amount" min="0" max="50000" step="10" value="120">
+    </div>
+    <div>
+      <label class="ctl" for="hour">Hour of Day <span class="ctl-val" id="hourVal">14:00</span></label>
+      <input type="range" id="hour" min="0" max="23" step="1" value="14">
+    </div>
+    <div style="padding-top:22px">
+      <div id="nightFlag" style="font-size:13px;font-weight:500"></div>
+      <div style="font-size:12px;color:#9B9B9B;margin-top:4px">Night window: 22:00 – 06:00</div>
+    </div>
+  </div>
+  <div class="score-result">
+    <div class="score-number" id="sNum">–</div>
+    <div class="score-label">Risk score · <span class="badge" id="sBadge"></span></div>
+    <div class="score-desc" id="sDesc"></div>
+  </div>
+
+  <hr>
+
+  <footer>
+    <span>Andreea Galusca · MSc Analytics &amp; Management · London Business School</span>
+    <a href="https://github.com/andreeagalusca234/credit-card-fraud-detection-ml" target="_blank" rel="noopener">GitHub ↗</a>
+  </footer>
+</main>
+
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const fmt = n => n.toLocaleString('en-GB');
+  const pct = x => (x * 100).toFixed(1) + '%';
+  const CONFIG = { displayModeBar: false, responsive: true };
+  const LAYOUT = {
+    plot_bgcolor: '#FFFFFF', paper_bgcolor: '#FFFFFF',
+    font: { family: 'Inter, sans-serif', size: 12, color: '#444' },
+    margin: { t: 40, b: 40, l: 50, r: 16 }, height: 300
+  };
+  let data = null, histBins = null;
+
+  // Count how many sorted values are below x (binary search).
+  function below(arr, x) {
+    let lo = 0, hi = arr.length;
+    while (lo < hi) { const m = (lo + hi) >> 1; if (arr[m] < x) lo = m + 1; else hi = m; }
+    return lo;
+  }
+  function split(arr, a, d) {
+    const x = below(arr, a), y = below(arr, d);
+    return [x, y - x, arr.length - y]; // approve, review, decline
+  }
+  function thresholds() { return [parseFloat($('approve').value), parseFloat($('decline').value)]; }
+  function decide(score, a, d) { return score < a ? 'Approve' : score < d ? 'Review' : 'Decline'; }
+
+  function buildHist() {
+    const bins = 60, edges = [];
+    for (let i = 0; i <= bins; i++) edges.push(i / bins);
+    const count = arr => {
+      const c = new Array(bins).fill(0);
+      for (const v of arr) c[Math.min(bins - 1, Math.floor(v * bins))]++;
+      return c;
+    };
+    const centers = edges.slice(0, -1).map(e => e + 0.5 / bins);
+    histBins = { centers, legit: count(data.legit), fraud: count(data.fraud), width: 1 / bins };
+  }
+
+  function renderResults() {
+    const [a, d] = thresholds();
+    $('approveVal').textContent = a.toFixed(3);
+    $('declineVal').textContent = d.toFixed(3);
+    document.querySelectorAll('.aT').forEach(e => e.textContent = a.toFixed(3));
+    document.querySelectorAll('.dT').forEach(e => e.textContent = d.toFixed(3));
+    renderScore();
+    if (a >= d) { $('warn').style.display = 'block'; $('results').style.opacity = 0.35; return; }
+    $('warn').style.display = 'none'; $('results').style.opacity = 1;
+    if (!data) return;
+
+    const [fMiss, fRev, fCaught] = split(data.fraud, a, d);
+    const [lApp, lRev, fp] = split(data.legit, a, d);
+    const total = data.fraud.length;
+    const recall = total ? fCaught / total : 0;
+    const precision = (fCaught + fp) ? fCaught / (fCaught + fp) : 0;
+
+    $('mRecall').textContent = pct(recall);
+    $('mRecallSub').textContent = `${fCaught} of ${total} caught`;
+    $('mPrec').textContent = pct(precision);
+    $('mReview').textContent = fmt(lRev + fRev);
+    $('mReviewSub').textContent = `incl. ${fRev} fraud cases`;
+    $('mFP').textContent = fmt(fp);
+    $('insight').innerHTML =
+      `At these thresholds the model catches <b>${pct(recall)} of fraud</b>, protecting an estimated ` +
+      `<b>£${fmt(fCaught * 50)}</b> in transaction value, while sending <b>${fmt(lRev)} legitimate transactions</b> ` +
+      `to review and declining <b>${fmt(fp)}</b> outright. Lowering the boundaries catches more fraud ` +
+      `but increases analyst workload and customer friction.`;
+
+    const cats = ['Approve', 'Review', 'Decline'];
+    Plotly.react('chartBars', [
+      { type: 'bar', name: 'Legitimate', x: cats, y: [lApp, lRev, fp], marker: { color: '#CBD5E1' } },
+      { type: 'bar', name: 'Fraud', x: cats, y: [fMiss, fRev, fCaught], marker: { color: '#191919' } }
+    ], { ...LAYOUT, barmode: 'stack',
+         title: { text: 'Decisions by Class', font: { size: 13, color: '#191919' }, x: 0.02 },
+         legend: { orientation: 'h', y: -0.2, x: 0 },
+         xaxis: { showgrid: false, linecolor: '#E9E9E7' },
+         yaxis: { gridcolor: '#F0F0EE', linecolor: '#E9E9E7' } }, CONFIG);
+
+    const cm = [[lApp, lRev, fp], [fMiss, fRev, fCaught]];
+    Plotly.react('chartCM', [{
+      type: 'heatmap', z: cm, x: cats, y: ['Legitimate', 'Fraud'],
+      colorscale: [[0, '#F7F7F5'], [1, '#191919']], showscale: false, xgap: 3, ygap: 3,
+      text: cm.map(r => r.map(fmt)), texttemplate: '%{text}', textfont: { size: 14 },
+      hovertemplate: '%{y} → %{x}: %{text}<extra></extra>'
+    }], { ...LAYOUT, title: { text: 'Confusion Matrix', font: { size: 13, color: '#191919' }, x: 0.02 },
+          margin: { t: 40, b: 40, l: 80, r: 16 } }, CONFIG);
+
+    const vline = (x, color, label) => ({
+      shape: { type: 'line', x0: x, x1: x, yref: 'paper', y0: 0, y1: 1, line: { color, width: 1.5, dash: 'dot' } },
+      ann: { x, yref: 'paper', y: 1.08, text: `${label} ${x.toFixed(3)}`, showarrow: false, font: { size: 11, color } }
+    });
+    const va = vline(a, '#0D7A5F', 'Approve'), vd = vline(d, '#C0392B', 'Decline');
+    Plotly.react('chartHist', [
+      { type: 'bar', name: 'Legitimate', x: histBins.centers, y: histBins.legit, width: histBins.width, marker: { color: '#CBD5E1' }, opacity: 0.75 },
+      { type: 'bar', name: 'Fraud', x: histBins.centers, y: histBins.fraud, width: histBins.width, marker: { color: '#191919' }, opacity: 0.75 }
+    ], { ...LAYOUT, height: 260, barmode: 'overlay', bargap: 0,
+         shapes: [va.shape, vd.shape], annotations: [va.ann, vd.ann],
+         xaxis: { title: { text: 'Risk Score' }, range: [0, 1], showgrid: false, linecolor: '#E9E9E7' },
+         yaxis: { title: { text: 'Count' }, gridcolor: '#F0F0EE', linecolor: '#E9E9E7' },
+         legend: { orientation: 'h', y: 1.2, x: 0 } }, CONFIG);
+  }
+
+  // Small seeded random generator so the same inputs always give the same score.
+  function seeded(seed) {
+    let t = seed >>> 0;
+    return function () {
+      t += 0x6D2B79F5; let r = Math.imul(t ^ (t >>> 15), 1 | t);
+      r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+      return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  const DESC = {
+    Approve: 'Score is below the review boundary. Transaction proceeds automatically, with no friction for the customer.',
+    Review: 'Score falls in the review zone. Flagged for manual analyst review or step-up authentication (e.g. OTP).',
+    Decline: 'Score exceeds the decline boundary. Transaction blocked and customer notified to contact their bank.'
+  };
+
+  function renderScore() {
+    const [a, d] = thresholds();
+    const amount = Math.max(0, Math.min(50000, parseFloat($('amount').value) || 0));
+    const hour = parseInt($('hour').value, 10);
+    $('hourVal').textContent = String(hour).padStart(2, '0') + ':00';
+    const night = hour < 6 || hour >= 22;
+    $('nightFlag').textContent = night ? 'Night transaction ⚠️' : 'Daytime transaction ✓';
+    $('nightFlag').style.color = night ? '#A35200' : '#0D7A5F';
+
+    let base = 0.04;
+    if (night) base += 0.28;
+    if (amount > 2000) base += 0.22;
+    else if (amount > 500) base += 0.12;
+    else if (amount > 200) base += 0.06;
+    base += Math.min(Math.log1p(amount) / 40, 0.08);
+    const rnd = seeded(Math.floor(amount * 100 + hour));
+    const score = Math.round(Math.min(0.98, Math.max(0.01, base + (rnd() * 0.04 - 0.02))) * 1000) / 1000;
+    const dec = decide(score, a, d);
+
+    $('sNum').textContent = score.toFixed(3);
+    $('sBadge').textContent = dec;
+    $('sBadge').className = 'badge badge-' + dec;
+    $('sDesc').textContent = DESC[dec];
+  }
+
+  ['approve', 'decline'].forEach(id => $(id).addEventListener('input', renderResults));
+  ['amount', 'hour'].forEach(id => $(id).addEventListener('input', renderScore));
+
+  renderResults();
+  fetch('scores.json')
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(j => { data = j; buildHist(); renderResults(); })
+    .catch(() => { $('insight').textContent = 'Could not load the transaction data. Please refresh the page.'; });
+})();
+</script>
+</body>
+</html>
